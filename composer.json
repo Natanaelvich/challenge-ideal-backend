@@ -11,7 +11,7 @@
 		"source": "https://github.com/bcit-ci/CodeIgniter"
 	},
 	"scripts": {
-		"dev": "php -S localhost:8000"
+		"dev": "php -S localhost:8000 index.php"
 	},
 	"require": {
 		"php": ">=5.3.7"
