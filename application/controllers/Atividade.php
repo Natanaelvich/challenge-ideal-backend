@@ -6,6 +6,9 @@ class Atividade extends CI_Controller
 	{
 		parent::__construct();
 		header('Content-Type: application/json');
+		header('Access-Control-Allow-Origin: *');
+		header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method");
+		header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 	}
 
 	public function get($id)
@@ -85,14 +88,16 @@ class Atividade extends CI_Controller
 
 	public function delete($id)
 	{
-
 		$atividade = $this->doctrine->em->find("Entity\atividade", $id);
 
+		if (!isset($atividade)) {
+			echo json_encode(["error" => "atividade not fount"]);
+			exit;
+		}
 
 		$this->doctrine->em->remove($atividade);
 		$this->doctrine->em->flush();
 
-
-		echo json_encode([]);
+		echo json_encode(["msg" => "success"]);
 	}
 }

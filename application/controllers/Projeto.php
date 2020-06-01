@@ -10,6 +10,9 @@ class Projeto extends CI_Controller
 	{
 		parent::__construct();
 		header('Content-Type: application/json');
+		header('Access-Control-Allow-Origin: *');
+		header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method");
+		header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 	}
 
 	public function atividades($id)
@@ -29,6 +32,7 @@ class Projeto extends CI_Controller
 		echo json_encode($data);
 	}
 
+
 	public function get($id)
 	{
 		$projeto = $this->doctrine->em->find("Entity\projeto", $id);
@@ -36,6 +40,21 @@ class Projeto extends CI_Controller
 			"id" => $projeto->getId(),
 			"descricao" => $projeto->getDescricao()
 		];
+
+		echo json_encode($data);
+	}
+
+	public function getall()
+	{
+		$data = [];
+		$projetos = $this->doctrine->em->getRepository("Entity\Projeto")->findAll();
+
+		foreach ($projetos as $projeto) {
+			$data[] = [
+				"id" => $projeto->getId(),
+				"descricao" => $projeto->getDescricao()
+			];
+		}
 
 		echo json_encode($data);
 	}
@@ -49,6 +68,17 @@ class Projeto extends CI_Controller
 		 */
 		if (!isset($input_data) || $input_data['descricao'] == '') {
 			echo json_encode(['error' => 'validation fails', 'msg' => 'descricao is required']);
+			exit;
+		}
+
+		/**
+		 * verify if projeto already exists
+		 */
+		$projetoExist = $this->doctrine->em->getRepository("Entity\Projeto")
+			->findBy(array("descricao" => $input_data['descricao']));
+
+		if ($projetoExist) {
+			echo json_encode(['error' => 'conflit', 'msg' => 'projeto already exists']);
 			exit;
 		}
 
@@ -81,10 +111,21 @@ class Projeto extends CI_Controller
 		}
 
 		/**
+		 * verify if projeto already exists
+		 */
+		$projetoExist = $this->doctrine->em->getRepository("Entity\Projeto")
+			->findBy(array("descricao" => $input_data['descricao']));
+
+		if ($projetoExist) {
+			echo json_encode(['error' => 'conflit', 'msg' => 'projeto already exists']);
+			exit;
+		}
+
+		/**
 		 * update projeto
 		 */
 		$projeto = $this->doctrine->em->find("Entity\projeto", $id);
-		$projeto->setDescricao($input_data['desc']);
+		$projeto->setDescricao($input_data['descricao']);
 		$this->doctrine->em->merge($projeto);
 		$this->doctrine->em->flush();
 
@@ -98,12 +139,31 @@ class Projeto extends CI_Controller
 
 	public function delete($id)
 	{
+		$projeto = $this->doctrine->em->find("Entity\projeto", $id);
 
-		$atividade = $this->doctrine->em->find("Entity\atividade", $id);
+		if (!isset($projeto)) {
+			echo json_encode(["error" => "projeto not fount"]);
+			exit;
+		}
 
-
-		$this->doctrine->em->remove($atividade);
+		$this->doctrine->em->remove($projeto);
 		$this->doctrine->em->flush();
+
+		echo json_encode([]);
+	}
+
+	public function deleteactivities($id)
+	{
+		$atividades = $this->doctrine->em->getRepository("Entity\Atividade")
+			->findBy(array("idProjeto" => $id), array("dataCadastro" => "asc"));
+
+		if (isset($atividades)) {
+			foreach ($atividades as $ativadade) {
+				$this->doctrine->em->remove($ativadade);
+
+				$this->doctrine->em->flush();
+			}
+		}
 
 
 		echo json_encode([]);
